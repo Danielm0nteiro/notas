@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Tópicos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --note-bg: #1e1e1e;
+            --editor-bg: #2e2e2e;
+            --border-color: #00ffcc;
+            --button-bg: #0ff;
+            --button-hover: #00c3ff;
+            --button-danger: #ff4444;
+            --button-danger-hover: #cc0000;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .note-container {
+            background-color: var(--note-bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            display: inline-block;
+            vertical-align: top;
+            margin: 8px;
+            min-width: 250px;
+            max-width: 400px;
+            cursor: pointer;
+        }
+
+        .editor {
+            background-color: var(--editor-bg);
+            border: 1px solid var(--border-color);
+            min-height: 150px;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: var(--text-color);
+            outline: none;
+            width: 100%;
+            height: auto;
+            overflow-y: hidden;
+            resize: vertical;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #noteBlocks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--note-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-[#121212] text-white">
+    <div class="container mx-auto px-6 py-8" id="mainContainer">
+        <div class="header-container">
+            <h1 class="text-[#00ffcc] text-3xl font-bold">Gerenciador de Tópicos</h1>
+            <button class="bg-[#0ff] text-[#121212] px-4 py-2 rounded-lg hover:bg-[#00c3ff]" onclick="mostrarModal()">Adicionar Tópico</button>
+        </div>
+        <div id="topicList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <div class="modal hidden" id="modal">
+        <input type="text" id="novoTopicoNome" class="p-2 rounded bg-gray-700 text-white" placeholder="Nome do Tópico">
+        <button class="bg-[#0ff] text-[#121212] px-4 py-2 rounded-lg hover:bg-[#00c3ff]" onclick="adicionarTopico()">Salvar</button>
+        <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700" onclick="fecharModal()">Cancelar</button>
+    </div>
+
+    <div class="container mx-auto px-6 py-8 hidden" id="notesContainer">
+        <div class="header-container">
+            <h2 id="notesTitle" class="text-[#00ffcc] text-2xl font-bold"></h2>
+            <div>
+                <button class="bg-[#0ff] text-[#121212] px-4 py-2 rounded-lg hover:bg-[#00c3ff]" onclick="adicionarBloco()">Adicionar Bloco</button>
+                <button class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700" onclick="voltar()">Voltar</button>
+                <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700" onclick="removerTopico(currentTopicIndex)">Excluir Tópico</button>
+            </div>
+        </div>
+        <div id="noteBlocks"></div>
+    </div>
+
+    <script>
+        let topics = JSON.parse(localStorage.getItem('topics')) || [];
+        let currentTopicIndex = null;
+
+        function mostrarModal() {
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function fecharModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function adicionarTopico() {
+            const nomeTopico = document.getElementById('novoTopicoNome').value.trim();
+            if (nomeTopico) {
+                topics.push({ nome: nomeTopico, notas: [] });
+                salvarDados();
+                carregarTopicos();
+                fecharModal();
+            }
+        }
+
+        function carregarTopicos() {
+            const topicList = document.getElementById('topicList');
+            topicList.innerHTML = '';
+            topics.forEach((topic, index) => {
+                const topicItem = document.createElement('div');
+                topicItem.className = 'note-container';
+                topicItem.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <input type="text" value="${topic.nome}" class="text-xl font-bold bg-transparent border-none outline-none w-full" 
+                               onblur="atualizarTopico(${index})" />
+                        <button onclick="removerTopico(${index})" class="text-red-500 hover:text-red-700">🗑️</button>
+                    </div>
+                `;
+                topicItem.onclick = () => abrirNotas(index);
+                topicList.appendChild(topicItem);
+            });
+        }
+
+        function abrirNotas(index) {
+            currentTopicIndex = index;
+            document.getElementById('mainContainer').classList.add('hidden');
+            document.getElementById('notesContainer').classList.remove('hidden');
+            document.getElementById('notesTitle').textContent = topics[index].nome;
+            carregarBlocos();
+        }
+
+        function adicionarBloco() {
+            if (currentTopicIndex === null) return;
+            topics[currentTopicIndex].notas.push({ titulo: 'Novo Bloco', conteudo: '' });
+            salvarDados();
+            carregarBlocos();
+        }
+
+        function carregarBlocos() {
+            const noteBlocks = document.getElementById('noteBlocks');
+            noteBlocks.innerHTML = '';
+            topics[currentTopicIndex].notas.forEach((nota, i) => {
+                const bloco = document.createElement('div');
+                bloco.className = 'note-container';
+                bloco.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <input type="text" value="${nota.titulo}" class="text-xl font-bold bg-transparent border-none outline-none w-full" 
+                               onblur="atualizarTitulo(${i})" />
+                        <button onclick="removerBloco(${i})" class="text-red-500 hover:text-red-700">🗑️</button>
+                    </div>
+                    <div contenteditable="true" class="editor" id="editor${i}" oninput="atualizarBloco(${i})">${nota.conteudo}</div>
+                `;
+                noteBlocks.appendChild(bloco);
+            });
+        }
+
+        function atualizarBloco(index) {
+            const conteudo = document.getElementById(`editor${index}`).innerText;
+            topics[currentTopicIndex].notas[index].conteudo = conteudo;
+            salvarDados();
+        }
+
+        function atualizarTitulo(index) {
+            const novoTitulo = document.querySelectorAll('.note-container input')[index].value;
+            topics[currentTopicIndex].notas[index].titulo = novoTitulo;
+            salvarDados();
+        }
+
+        function atualizarTopico(index) {
+            const novoTitulo = document.querySelectorAll('.note-container input')[index].value;
+            topics[index].nome = novoTitulo;
+            salvarDados();
+        }
+
+        function removerBloco(index) {
+            topics[currentTopicIndex].notas.splice(index, 1);
+            salvarDados();
+            carregarBlocos();
+        }
+
+        function removerTopico(index) {
+            topics.splice(index, 1);
+            salvarDados();
+            carregarTopicos();
+            voltar();
+        }
+
+        function salvarDados() {
+            localStorage.setItem('topics', JSON.stringify(topics));
+        }
+
+        function voltar() {
+            document.getElementById('mainContainer').classList.remove('hidden');
+            document.getElementById('notesContainer').classList.add('hidden');
+        }
+
+        // Carrega os tópicos ao iniciar
+        carregarTopicos();
+    </script>
+</body>
+</html>
