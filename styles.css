@@ -1,0 +1,77 @@
+/* styles.css */
+:root {
+    --bg-color: #121212;
+    --text-color: #ffffff;
+    --note-bg: #1e1e1e;
+    --editor-bg: #2e2e2e;
+    --border-color: #00ffcc;
+    --button-bg: #0ff;
+    --button-hover: #00c3ff;
+    --button-danger: #ff4444;
+    --button-danger-hover: #cc0000;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.note-container {
+    background-color: var(--note-bg);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    display: inline-block;
+    vertical-align: top;
+    margin: 8px;
+    min-width: 250px;
+    max-width: 400px;
+    cursor: pointer;
+}
+
+.editor {
+    background-color: var(--editor-bg);
+    border: 1px solid var(--border-color);
+    min-height: 150px;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    color: var(--text-color);
+    outline: none;
+    width: 100%;
+    height: auto;
+    overflow-y: hidden;
+    resize: vertical;
+}
+
+.hidden {
+    display: none;
+}
+
+#noteBlocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--note-bg);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
